@@ -1,0 +1,70 @@
+ Programa Calculadora {
+	principal(){
+		
+		ENT $op = 5;
+		DEC $a = 0.0;
+		DEC $b = 0.0;
+		DEC $res = 0.0;
+
+		mientras($op != 0){
+
+			mientras($op < 0 ){
+
+				escribir("Calculadora");
+				escribir("1.-Suma");
+				escribir("2.-Resta");
+				escribir("3.-Multiplicacion");
+				escribir("4.-Division");
+				escribir("0.-Salir");
+				escribir("Seleccione la opcion deseada");
+				$op = leer(ENT);
+
+				si($op < 0 ){
+					escribir("La opcion no es valida");
+					
+				}
+				
+			}
+
+			si($op != 0){
+
+				escribir("Digite la primera cifra: ");
+				$a = leer(DEC);
+				escribir("Digite la segunda cifra: ");
+				$b = leer(DEC);
+
+				opcion($op){
+					caso 1:{
+						$res = $a + $b;
+						escribir($a , "+" , $b , "=" , $res);
+						cortar;
+					}
+					caso 2:{
+						$res = $a - $b;
+						escribir($a , "-" , $b , "=" , $res);
+						cortar;
+					}
+					caso 3:{
+						$res = $a * $b;
+						escribir($a , "*" , $b , "=" , $res);
+						cortar;
+					}
+					caso 4:{
+							$res = $a / $b;
+							escribir($a , "/" , $b , "=" , $res);
+						cortar;
+					}
+				}
+
+				escribir("Presione Enter para continuar");
+				CAD $continuar = leer(CAD);
+			}
+
+		}
+	
+	}
+	
+}
+Fin
+
+

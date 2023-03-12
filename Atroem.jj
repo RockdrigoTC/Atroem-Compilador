@@ -1,0 +1,1378 @@
+/*
+options{
+    DEBUG_PARSER = true;
+    DEBUG_LOOKAHEAD = true;
+    DEBUG_TOKEN_MANAGER = true;
+}
+*/
+
+PARSER_BEGIN(Atroem)
+
+    import java.util.*;
+
+	public class Atroem {
+        private boolean bandera = false;
+        private static ArrayList<String> mensajesError = new ArrayList();
+        private static ArrayList<Integer> tipoVar = new ArrayList();
+        private static ArrayList<String> nombreVar = new ArrayList();
+        private static ArrayList<String> valorVar = new ArrayList();
+		public static void main(String[]args)throws TokenMgrError{
+			
+			try{
+				Atroem analizador = new Atroem(System.in);
+				analizador.Inicio();
+
+                if(!mensajesError.isEmpty()){
+                    System.out.println("\nErrores encontrados: "+mensajesError.size());
+				    for(String mensaje:mensajesError){
+                          System.out.println(mensaje);
+                       }
+                       System.out.println("\nVerifique tabla de errores");
+                }else{
+                    System.out.println("\nErrores encontrados: "+mensajesError.size());
+                    System.out.println("\n-----Compilación exitosa-----\n");
+                    }
+
+			}catch(ParseException e){
+				System.out.println(e.getMessage());
+			}//catch(TokenMgrError e){
+				//System.out.println(e.getMessage()+"aqui");
+		//}
+
+		}
+
+	}
+PARSER_END(Atroem)
+
+
+/*Funciones*/
+
+void Inicio():{}{
+    try{
+	    Progr()Nprograma()Llai()Principal()Llad()Finprogr()<EOF>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+
+}
+
+void Principal():{}{
+    try{
+	    Main()Llai()Sentencias()Llad()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+       
+    }
+}
+
+void Sentencias():{}{
+    try{                                
+	    (
+	    Declaracion()
+        |Asignacion()
+	    |For()
+	    |While()
+	    |DoWhile()
+	    |If()
+	    |Switch()
+	    |Entrada()
+	    |Salida()
+	    )*
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+       mensajesError.add(ex.getMessage());
+    }
+}
+
+
+void Declaracion():
+{int indice;}
+{
+    try{
+        TipoDeDato()guardarTipo()Variable()guardarIden()guardarValor(){indice = buscarVar();}(Pucoma()| AsignacionDec(indice))
+
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void Asignacion():{
+    int indice;
+}{
+    try{
+        Variable(){indice = buscarVar();}AsignacionDec(indice)
+
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }catch(IndexOutOfBoundsException exc){
+         mensajesError.add("\n\nLa variable: " + token.image + " no existe");
+    }
+}
+
+void AsignacionDec(int indice):{
+    ArrayList<String> expresion = new ArrayList();
+}{
+    try{
+        Asignar()
+        ValorGeneral()comprobarAsig(indice){expresion.add(token.image);}
+        {if(tipoVar.get(indice) == 35 || tipoVar.get(indice) == 36)
+        operacion(indice, expresion);
+        }
+        Pucoma()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+    {valorVar.set(indice, comprobarTipo(indice, generarValor(conversionPrefija(expresion))));}
+}
+
+ArrayList<String> operacion(int indice, ArrayList<String> expresion):{}{
+
+    try{
+       
+        (OperadorAri(){expresion.add(token.image);}
+        ValorNum()comprobarAsig(indice){expresion.add(token.image);})*
+
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+        {return expresion;}
+}
+
+JAVACODE
+void hastaPucoma(){
+    Token t;
+
+    while(true){
+        t = getToken(1);
+        if(t.kind == 17){
+            t = getNextToken();
+            break;
+        }
+        t = getNextToken();
+    }
+}
+
+JAVACODE
+String comprobarTipo(int indice, String r){ 
+
+    if(tipoVar.get(indice) == 35){
+
+            float resultado = Float.parseFloat(r);
+            int aux = (int)resultado;
+            return String.valueOf(aux);
+    }else{
+        return r;
+    }
+}
+
+///////////////////////////////////
+JAVACODE
+void comprobarAsig(int indice){
+    int tokenIndice=0;
+    try{
+        if(token.kind == 52){
+            tokenIndice = tipoVar.get(buscarVar());
+        }else{
+            tokenIndice = token.kind;
+        }
+    }catch(IndexOutOfBoundsException exc){
+         mensajesError.add("\n\nLa variable: " + token.image + " no existe");
+    }
+    
+    switch(tipoVar.get(indice)){
+        //Entero
+        case 35:{
+            if(tokenIndice == 53 || tokenIndice == 35){
+            }else{
+                regErrorTipoVAr(token, "Valor entero");
+            }
+            break;
+        }
+        //Decimal
+        case 36:{
+            if(tokenIndice == 54 || tokenIndice == 36){
+            }else{
+                regErrorTipoVAr(token, "Valor decimal");
+            }
+            break;
+        }
+        //Caracter
+        case 37:{
+            if(tokenIndice == 55 || tokenIndice == 37){
+            }else{
+                regErrorTipoVAr(token, "Caracter");
+            }
+            break;
+        }
+        //Cadena
+         case 38:{
+            if(tokenIndice == 56 || tokenIndice == 38){
+            }else{
+                regErrorTipoVAr(token, "Valor de cadena");
+            }
+            break;
+        }
+        //Boleano
+        case 39:{
+            if(tokenIndice == 5 || tokenIndice == 6  || tokenIndice == 39){
+            }else{
+                regErrorTipoVAr(token, "Valor booleano");
+            }
+            break;
+        }
+    }
+}
+
+JAVACODE
+void guardarTipo(){
+    tipoVar.add(token.kind);
+}
+
+JAVACODE
+void guardarIden(){
+    nombreVar.add(token.toString());
+}
+
+JAVACODE
+void guardarValor(){
+    valorVar.add("0");
+}
+
+JAVACODE
+int buscarVar(){
+    Token t = token;
+    int indice = -1;
+
+    for(int i=0; i < nombreVar.size(); i++){
+        if(nombreVar.get(i).equals(t.image)){
+            indice = i;
+            //System.out.println("Indice: " + indice);
+            break;
+        }
+    }
+
+    return indice;
+}
+
+JAVACODE
+int buscarVarOperacion(String operando){
+    int indice = -1;
+    for(int i=0; i < nombreVar.size(); i++){
+        if(nombreVar.get(i).equals(operando)){
+            indice = i;
+            break;
+        }
+    }
+
+    return indice;
+}
+
+
+//METODO DE CONVERSIÓN INFIJA A PREFIJA    
+JAVACODE
+ArrayList conversionPrefija(ArrayList<String> a){
+    
+    Stack<String> pilaOperadores = new Stack<String>();
+    Stack<String> exPrefija = new Stack<String>();
+    String expresionPrefija = ""; 
+
+    while(!a.isEmpty()){
+        String elemento = a.get(a.size()-1);
+        if(esOperador(elemento)){
+                while(!pilaOperadores.empty() && comprobarPrioridad(elemento, pilaOperadores.peek())){
+                    exPrefija.push(pilaOperadores.pop());
+                }
+                pilaOperadores.push(elemento)---------{-;
+        }else{
+            exPrefija.push(elemento);
+        }
+
+        a.remove(a.size()-1);
+    }
+    
+
+    while(!pilaOperadores.empty()){
+        exPrefija.push(pilaOperadores.pop());
+    }
+
+    ArrayList<String> exInvertida = new ArrayList<String>();
+    while(!exPrefija.empty()){
+        exInvertida.add(exPrefija.pop());
+    }
+
+    //Imprime la expresión prefija
+    /*for(int i=0; i<exInvertida.size(); i++){
+        System.out.print(exInvertida.get(i) + " ");
+    }
+        System.out.println("");*/
+    return exInvertida;
+}
+
+
+JAVACODE
+boolean esOperador(String c) {
+    return (c == "+" || c == "-" || c == "*" || c == "/" || c== "=");
+}
+
+JAVACODE
+boolean comprobarPrioridad(String op1, String op2) {
+    switch (op1) {
+        case "+":
+        case "-":
+        case "=":
+            return true;
+        case "*":
+        case "/":
+            return (op2 == "*" || op2 == "/" ? true : false);
+    }
+    return true;
+  }
+
+  //METODO QUE HACE OPERACIONES
+JAVACODE
+String generarValor(ArrayList<String> expresion){
+
+    while(expresion.size() > 1){
+        for(int i=0; i<expresion.size();i++){
+            if(esOperador(expresion.get(i))){
+                if(!esOperador(expresion.get(i+1)) && !esOperador(expresion.get(i+2))){
+                    expresion.set(i, imprimirValor(expresion.get(i+1), expresion.get(i+2), expresion.get(i)));
+                    expresion.remove(i+2);
+                    expresion.remove(i+1);
+                    break;
+                }
+            }
+        }
+    }
+    return expresion.get(0);
+}
+
+JAVACODE
+String imprimirValor(String a, String b, String op){
+
+    float operandoA=0, operandoB=0, resultado = 0;
+
+    try{
+        if(a.contains("$")){
+            a = valorVar.get(buscarVarOperacion(a));
+        }
+        operandoA = Float.parseFloat(a);
+    }catch(IndexOutOfBoundsException exc){
+        System.out.println("La variable "+a+" no existe");
+        return resultado + "";
+    }
+
+    try{
+        if(b.contains("$")){
+            b = valorVar.get(buscarVarOperacion(b));
+        }
+        operandoB = Float.parseFloat(b);
+    }catch(IndexOutOfBoundsException exc){
+        System.out.println("La variable "+b+" no existe");
+        return resultado + "";
+    }
+
+    switch(op){
+        case "+":{
+            resultado = operandoA + operandoB;
+            break;
+        }
+        case "-":{
+            resultado = operandoA - operandoB;
+            break;
+        }
+        case "*":{
+            resultado = operandoA * operandoB;
+            break;
+        }
+        case "/":{
+            resultado = operandoA / operandoB;
+            break;
+        }
+    }
+    /*String[] aux = String.valueOf(resultado).split(".");
+    if(a.contains(".") || b.contains(".") || !aux[1].equals("0")){
+        return String.valueOf(resultado);
+    }else{
+        return String.valueOf(Math.roundFloor(resultado));
+    }*/
+
+    return resultado + "";
+
+}
+
+
+JAVACODE
+void regErrorTipoVAr(Token tokenActual, String tokenEsperado){
+    String retval = "\n\nAnalizador: Ocurrió un error semántico de tipo de variable\n";
+    retval += "Se encontró ( ";
+    retval += tokenActual.image;
+    retval += " ) en la línea " + tokenActual.beginLine + ", columna " + tokenActual.beginColumn;
+    retval += ".\nEra esperado un "+tokenEsperado+".";
+    mensajesError.add(retval);
+}
+
+void For():{}{
+    try{
+	    For1()Pari()(TipoDeDatoNumerico()Variable()|Variable())Asignar()Valor()Pucoma()Variable()OperadorComparacion()Valor()Pucoma()Variable()((Inc()|Dec())|Asignar()Variable()OperadorAri()ValorNum())Pard()Llai()Sentencias()Llad()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void While():{}{
+    try{    While1()Pari()Comparacion()((Opy()|Opo())Comparacion())*Pard()Llai()Sentencias()Llad()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void DoWhile():{}{
+    try{
+	    Do()Llai()Sentencias()Llad()While()Pari()Comparacion()((Opy()|Opo())Comparacion())*Pard()Pucoma()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void If():{
+    int resComp = 0;
+}{
+    try{
+	    Si()
+        Pari()
+        {resComp = Comparacion();}
+        Pard()
+        Llai()
+        Sentencias()
+        Llad()
+        (ElseIf())*[Else()]
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+/*void Comparacion():{}{
+    try{
+        ValorGeneral()OperadorComparacion()ValorGeneral()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}*/
+
+int Comparacion():{
+    String opA = "", opB = "", op = "", bool = "";
+    int kopA = 0, kopB = 0, kop = 0, kbool = 0;
+    int resComp = 0;
+}{
+    try{
+        ValorBooleano() {resComp = comprobarBooleano(token.image, token.kind);}
+        |
+        (Valor(){opA = token.image; kopA = token.kind;}
+        OperadorComparacion(){op = token.image; kop = token.kind;}
+        Valor(){opB = token.image; kopB = token.kind;})
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+
+    {resComp = comparacionDato(opA, opB, op, kopA, kopB, kop);
+    return resComp;}
+}
+
+JAVACODE
+int comprobarBooleano(String bool, int kindBool){
+    if(kindBool == 52){
+        int indice = buscarVarIndice(bool);
+        if(indice == -1) return 0; 
+        bool = valorVar.get(indice);
+    }
+    if(bool.equals("verdadero")) return 1; else return 0;
+}
+
+
+JAVACODE
+int comparacionDato(String opA, String opB, String op, int kopA, int kopB, int kop){
+
+    if(kopA == 52){
+        int indice = buscarVarIndice(opA);
+        if(indice == -1) return 0; 
+        kopA = tipoVar.get(indice);
+        opA = valorVar.get(indice);
+    }
+    if(kopB == 52){
+        int indice = buscarVarIndice(opB);
+        if(indice == -1) return 0;
+        kopB = tipoVar.get(indice);
+        opB = valorVar.get(indice);
+    }
+
+    //Cadena
+    if(kopA == 55 && kopB == 55 && kop == 11){
+        if(opA.equals(opB)) return 1; else return 0;
+    }
+    //Caracter
+    if(kopA == 56 && kopB == 56 && kop == 11){
+        if(opA.equals(opB)) return 1; else return 0;
+    }
+
+    //Enteros
+    if(kopA == 53 && kopB == 53){
+        int a = Integer.parseInt(opA);
+        int b = Integer.parseInt(opB);
+        switch(kop){
+            case 9:{
+                if(a < b) return 1; else return 0;
+            }
+            case 10:{
+                if(a > b) return 1; else return 0;
+            }
+            case 11:{
+                if(a == b) return 1; else return 0;
+            }
+            case 12:{
+                if(a != b) return 1; else return 0;
+            }
+            case 15:{
+                if(a <= b) return 1; else return 0;
+            }
+            case 16:{
+                if(a >= b) return 1; else return 0;
+            }
+        }
+    }
+
+    //Decimales
+    if(kopA == 54 && kopB == 54){
+        float a = Float.parseFloat(opA);
+        float b = Float.parseFloat(opB);
+        switch(kop){
+            case 9:{
+                if(a < b) return 1; else return 0;
+            }
+            case 10:{
+                if(a > b) return 1; else return 0;
+            }
+            case 11:{
+                if(a == b) return 1; else return 0;
+            }
+            case 12:{
+                if(a != b) return 1; else return 0;
+            }
+            case 15:{
+                if(a <= b) return 1; else return 0;
+            }
+            case 16:{
+                if(a >= b) return 1; else return 0;
+            }
+        }
+    }
+    return 0;
+}
+
+JAVACODE
+int buscarVarIndice(String nomVar){
+    try{
+        for(int i=0; i < nombreVar.size(); i++){
+            if(nombreVar.get(i).equals(nomVar)){
+                return i;
+            }
+        }
+    }catch(IndexOutOfBoundsException exc){
+        System.out.println("La variable "+nomVar+" no existe");
+    }
+    return -1;
+}
+
+
+void OperadorComparacion():{}{
+    try{
+        Menor()|Mayor()|Igual()|Menorigual()|Mayorigual()|Diferentede()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void Else():{}{
+    try{
+        Sino()Llai()Sentencias()Llad()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void ElseIf():{}{
+    try{
+        Nosi()Pari()Comparacion()Pard()Llai()Sentencias()Llad()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void Switch():{}{
+    try{
+        Opcion()Pari()Variable()Pard()Llai()(Caso())*[PorDefecto()]Llad() 
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void Caso():{}{
+    try{
+	    Caso1()ValorCaso()Dpuntos()Llai()Sentencias()[Interrumpir()Pucoma()]Llad()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void PorDefecto():{}{
+    try{
+	    Pordefecto()Dpuntos()Llai()Sentencias()Llad()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+//ENTRADA Y SALIDA
+
+void Entrada():{}{
+    try{
+	    Entrada1()Pari()TipoDeDato()Pard()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    } catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }     
+}
+
+void imprimirSalida(String mensaje):{
+}{
+    {   mensaje = mensaje.replaceAll("\"","");
+        mensaje = mensaje.replaceAll("\'","");
+        System.out.println(mensaje);}
+}
+
+void Salida():{
+    ArrayList<String> expImprimir = new ArrayList();
+    String eFinal = "";
+}{
+    try{
+
+	    Salida1()Pari()(Cadena(){expImprimir.add(token.image);}|Variable(){expImprimir.add(valorVar.get(buscarVar()));})
+        (Coma()
+        (Variable(){expImprimir.add(valorVar.get(buscarVar()));}|Cadena(){expImprimir.add(token.image);}))*Pard()Pucoma()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }catch(IndexOutOfBoundsException exc){
+        System.out.println("La variable No ha sido declarada");
+    }
+    try{
+        {for(int i=0; i<expImprimir.size(); i++){
+        eFinal = eFinal + expImprimir.get(i);}}
+    }catch(IndexOutOfBoundsException exc){
+
+    }
+    
+
+    imprimirSalida(eFinal)
+}
+
+
+
+void TipoDeDatoNumerico():{}{
+    try{
+	    Entero()|Decimal()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void TipoDeDato():{}{
+    try{
+	    Entero()|Decimal()|Caracter()|Cade()|Booleano() 
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void Valor():{}{
+    try{
+	    Variable()|[Resta()](Numero()|Numerodec())|Cadena()|Carac()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+void ValorNum():{}{
+    try{                                  
+	    Variable()|[Resta()](Numero()|Numerodec())
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void ValorGeneral():{}{
+    try{
+	    Variable()|[Resta()](Numero()|Numerodec())|Cadena()|Carac()|[Negacion()](True()|False())
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void ValorCaso():{}{
+    try{
+	    [Resta()](Numero()|Numerodec())|Cadena()|Carac()|True()|False()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+void ValorBooleano():{}{
+    try{
+       True()|False()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+
+
+void OperadorAri():{}{
+    try{                                   
+	    Suma()|Resta()|Multi()|Division()|Residuo()|Potencia()
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }catch(TokenMgrError ex){
+        mensajesError.add(ex.getMessage());
+    }
+}
+
+//TOKENS
+
+/*Estructura general*/
+TOKEN:{
+
+    <MAIN: "principal()"> //1
+    |<PROGR: "Programa" > //2
+    |<FINPROGR: "Fin"> //3
+    |<NPROGRAMA: ([ "A"-"Z"])(["a"-"z"])+(["0"-"9"])*> //4
+}
+
+/*Operadores logicos*/
+
+TOKEN:{
+
+    <TRUE: "verdadero"> //5
+    |<FALSE: "falso"> //6
+    |<OPY: "&"> //7
+    |<OPO: "|"> //8
+    |<MENOR: "<"> //9
+    |<MAYOR: ">"> //10
+    |<IGUAL: "=="> //11
+    |<DIFERENTEDE: "!=">//12 
+    |<DPUNTOS: ":"> //13
+    |<ASIGNAR: "="> //14
+    |<MENORIGUAL: "<="> //15
+    |<MAYORIGUAL: ">="> //16
+    |<PUCOMA: ";"> //17
+    |<INC: "++"> //18
+    |<DEC: "--"> //19
+    |<DCOMILLA: "\"">//20
+    |<COMA:",">//21
+    |<NEGACION:"!">//22
+}
+TOKEN:{
+
+    <SUMA: "+"> //23
+    |<RESTA: "-"> //24
+    |<MULTI: "*"> //25
+    |<DIVISION: "/"> //26
+    |<RESIDUO: "%"> //27
+    |<POTENCIA: "^"> //28
+}
+
+/*Simbolos de agrupacion*/
+
+TOKEN:{
+    <PARI: "("> //29
+    |<PARD: ")"> //30
+    |<LLAI: "{"> //31
+    |<LLAD: "}"> //32
+    |<CORI: "["> //33
+    |<CORD: "]"> //34
+}
+
+/*Tipos de datos*/
+
+TOKEN:{
+
+    <ENTERO: "ENT"> //35
+    |<DECIMAL: "DEC"> //36
+    |<CARACTER: "SIM"> //37
+    |<CADE: "CAD"> //38
+    |<BOOLEANO: "BOOL">//39 
+}
+
+/*Condicionales*/
+
+TOKEN:{
+
+    <SI: "si"> //40
+    |<SINO: "sino">//41 
+    |<NOSI: "nosi"> //42
+    |<OPCION: "opcion"> //43
+    |<CASO: "caso"> //44
+    |<INTERRUMPIR: "cortar">//45 
+    |<PORDEFECTO: "porDefecto"> //46
+}
+
+/*Estructuras ciclicas*/
+
+TOKEN:{
+
+    <FOR: "hasta"> //47
+    |<WHILE: "mientras"> //48 
+    |<DO: "hacer"> //49
+
+}
+
+/*Entrada y salida*/
+
+TOKEN:{
+
+    <ENTRADA: "leer"> //50
+    |<SALIDA: "escribir"> //51
+}
+
+/*Variables y Numeros*/
+
+TOKEN:{
+
+    <VARIABLE: "$"(["a"-"z", "A"-"Z"])+(["0"-"9"])*> //52
+    |<NUMERO: (["0"-"9"])+> //53
+    |<NUMERODEC: (["0"-"9"])+"."(["0"-"9"])+> //54
+    |<CARAC : "'"["a"-"z","A"-"Z","0"-"9"]"'" > //55
+    |<CADENA: "\""(~["\n","\r","\""])*"\"">//56
+}
+SKIP:{
+    " "
+    |"\n"
+    |"\r"
+    |"\t"
+}
+
+//METODOS DE LOS TOKEN
+
+void Main():{}{
+	try{
+		<MAIN>
+    }catch(ParseException e){
+     	 mensajesError.add(e.getMessage());
+  	}
+
+}
+
+void Progr():{}{
+	try{
+		<PROGR>
+    }catch(ParseException e){
+     	 mensajesError.add(e.getMessage());
+  	}
+
+}
+
+void Finprogr():{}{
+	try{
+		<FINPROGR>
+    }catch(ParseException e){
+     	 mensajesError.add(e.getMessage());	
+  	}
+
+}
+
+void Nprograma():{}{
+	try{
+		<NPROGRAMA>
+    }catch(ParseException e){
+     	 mensajesError.add(e.getMessage());
+  	}
+
+}
+
+void Entrada1():{}{
+	try{
+		<ENTRADA>
+    }catch(ParseException e){
+     	 mensajesError.add(e.getMessage());
+  	}
+
+}
+
+void Salida1():{}{
+	try{
+		<SALIDA>
+    }catch(ParseException e){
+     	mensajesError.add(e.getMessage());
+  	}
+
+}
+
+
+
+void Variable():{}{
+	try{
+		<VARIABLE>
+    }catch(ParseException e){
+     	 mensajesError.add(e.getMessage());
+  	}
+
+}
+
+void Numero():{}{
+	try{
+		<NUMERO>
+    }catch(ParseException e){
+     	 mensajesError.add(e.getMessage());
+  	}
+
+}
+
+void Numerodec():{}{
+	try{
+		<NUMERODEC>
+    }catch(ParseException e){
+     	 mensajesError.add(e.getMessage());
+  	}
+
+}
+
+
+void Carac():{}{
+	try{
+		<CARAC>
+    }catch(ParseException e){
+     	 mensajesError.add(e.getMessage());
+  	}
+
+}
+
+
+void Cadena():{}{
+	try{
+		<CADENA>
+    }catch(ParseException e){
+     	 mensajesError.add(e.getMessage());
+  	}
+}
+
+void Pari():{}{
+    try{
+	   <PARI>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+
+}
+
+void Pard():{}{
+    try{
+	   <PARD>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Llai():{}{
+    try{
+	   <LLAI>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Llad():{}{
+    try{
+	   <LLAD>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Cori():{}{
+    try{
+	   <CORI> 
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Cord():{}{
+    try{
+	   <CORD> 
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Entero():{}{
+    try{
+	   <ENTERO>  
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Decimal():{}{
+    try{
+	   <DECIMAL>  
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Caracter():{}{
+    try{
+	   <CARACTER>  
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Cade():{}{
+    try{
+	   <CADE>  
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Booleano():{}{
+    try{
+	   <BOOLEANO>  
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Si():{}{
+    try{                                   
+	    <SI>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Sino():{}{
+    try{                                   
+	    <SINO>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Nosi():{}{
+    try{                                   
+	    <NOSI>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Opcion():{}{
+    try{                                   
+	    <OPCION>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Caso1():{}{
+    try{                                   
+	    <CASO>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Interrumpir():{}{
+    try{                                   
+	    <INTERRUMPIR>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void For1():{}{
+    try{                                   
+	    <FOR>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void While1():{}{
+    try{                                   
+	    <WHILE>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Do():{}{
+    try{                                   
+	    <DO>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void True():{}{
+    try{                                   
+	    <TRUE>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void False():{}{
+    try{                                   
+	    <FALSE>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Opy():{}{
+    try{                                   
+	    <OPY>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Opo():{}{
+    try{                                   
+	    <OPO>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Menor():{}{
+    try{                                   
+	    <MENOR>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Mayor():{}{
+    try{                                   
+	    <MAYOR>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Igual():{}{
+    try{                                   
+	    <IGUAL>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Diferentede():{}{
+    try{                                   
+	    <DIFERENTEDE>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Dpuntos():{}{
+    try{                                   
+	    <DPUNTOS>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Asignar():{}{
+    try{                                   
+	    <ASIGNAR>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Menorigual():{}{
+    try{                                   
+	    <MENORIGUAL>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Mayorigual():{}{
+    try{                                   
+	    <MAYORIGUAL>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Pucoma():{}{
+    try{                                   
+	    <PUCOMA>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+        hastaPucoma();
+    }
+}
+
+void Inc():{}{
+    try{                                   
+	    <INC>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Dec():{}{
+    try{                                   
+	    <DEC>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Dcomilla():{}{
+    try{                                   
+	    <DCOMILLA>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Coma():{}{
+    try{                                   
+	    <COMA>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Negacion():{}{
+    try{                                   
+	    <NEGACION>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Suma():{}{
+    try{                                   
+	    <SUMA>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+void Resta():{}{
+    try{                                   
+	    <RESTA>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Multi():{}{
+    try{                                   
+	    <MULTI>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Division():{}{
+    try{                                   
+	    <DIVISION>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Residuo():{}{
+    try{                                   
+	    <RESIDUO>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Potencia():{}{
+    try{                                   
+	    <POTENCIA>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+
+void Pordefecto():{}{
+    try{                                   
+	    <PORDEFECTO>
+    }catch(ParseException e){
+        mensajesError.add(e.getMessage());
+    }
+}
+

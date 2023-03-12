@@ -1,0 +1,20 @@
+Programa Factorial{
+	
+	principal(){
+
+		ENT $factorial = leer(ENT);
+		ENT $aux = $factorial;
+		ENT i = 0;
+
+		hasta($i = $factorial; $i > 1; $i--){
+
+			$aux = $aux * $i-1;
+			escribir($aux);
+		}
+
+		escribir("Factorial de: ", $factorial,  " es ", $aux);
+
+	}
+
+}
+Fin

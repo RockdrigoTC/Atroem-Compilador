@@ -1,0 +1,23 @@
+Programa Primo {
+	
+	principal(){
+		BOOL $primo =verdadero;
+		ENT $i=2;
+		escribir("Ingrese un numero positivo: ");
+		ENT $num=leer(ENT);
+		mientras($i<$num){
+			ENT $raiz=$num%$i;
+			si($raiz==0){
+				$primo= falso;
+			}
+			$i=$i+1;
+		}
+		si($primo== verdadero){
+			escribir("El número es primo");
+
+		}sino{
+			escribir("El número NO es primo");
+		}
+	}
+}
+Fin

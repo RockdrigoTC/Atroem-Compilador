@@ -1,0 +1,13 @@
+Programa Revision{
+	
+	principal(){
+
+		ENT $x = 5;
+		ENT $y = 6;
+		ENT $z = $x  $y + $x / $y;
+
+		escribir($x, " * ", $y, " = ", $z);
+
+	}
+}
+Fin
